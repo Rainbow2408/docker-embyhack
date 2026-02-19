@@ -32,3 +32,21 @@ else
     echo "[Custom-Init] Warning: Source CA certificate not found at $SOURCE_CA"
     echo "[Custom-Init] This is expected on first run if cert-gen hasn't finished yet, but cert-gen should run before emby starts."
 fi
+
+# --- Inject crypto.js into index.html ---
+echo "[Custom-Init] Checking for crypto.js injection..."
+INDEX_FILE="/app/emby/system/dashboard-ui/index.html"
+INJECTION_TAG='<script src="modules/polyfills/crypto.js"></script>'
+
+if [ -f "$INDEX_FILE" ]; then
+    if grep -Fq "modules/polyfills/crypto.js" "$INDEX_FILE"; then
+        echo "[Custom-Init] crypto.js already injected in $INDEX_FILE"
+    else
+        echo "[Custom-Init] Injecting crypto.js into $INDEX_FILE..."
+        # Insert inside <head>
+        sed -i "s|</head>|    $INJECTION_TAG\n</head>|" "$INDEX_FILE"
+        echo "[Custom-Init] Injection successful."
+    fi
+else
+    echo "[Custom-Init] Warning: index.html not found at $INDEX_FILE. Skipping injection."
+fi
