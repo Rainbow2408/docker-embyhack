@@ -1,0 +1,11 @@
+FROM alpine:latest
+
+RUN apk add --no-cache openssl bash ca-certificates
+
+COPY root.conf server.conf /sign/
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+VOLUME ["/certs"]
+
+ENTRYPOINT ["/entrypoint.sh"]

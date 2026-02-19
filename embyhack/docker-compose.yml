@@ -1,15 +1,28 @@
 ---
-version: "2.1"
 services:
+  cert-gen:
+    build:
+      context: ./cert-gen
+      dockerfile: Dockerfile.cert-gen
+    container_name: cert-gen
+    volumes:
+      - ./certs:/certs #自动生成的证书输出目录
+    restart: "no"
+
   nginx:
     image: linuxserver/nginx
     container_name: mb3admin.com #两个容器间互联，实现免改 hosts/DNS 指定 emby 服务端访问本地伪造的 mb3admin.com 网站
+    depends_on:
+      cert-gen:
+        condition: service_completed_successfully
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=Asia/Shanghai
     volumes:
       - ./nginx:/config #nginx 的配置目录，已经部署好伪造证书与 emby 授权的响应
+      - ./certs/cert.crt:/config/keys/cert.crt:ro #自动生成的伪造证书
+      - ./certs/cert.key:/config/keys/cert.key:ro #自动生成的伪造密钥
 #    ports:
 #      - 443:443
 #单纯破解与该容器互联的 emby 服务端情况下，无需映射 https 的 443 端口出来
@@ -18,16 +31,20 @@ services:
   emby:
     image: linuxserver/emby
     depends_on:
-      - nginx
+      cert-gen:
+        condition: service_completed_successfully
+      nginx:
+        condition: service_started
     container_name: emby
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=Asia/Shanghai
     volumes:
-      - ./ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt #将添加了 伪造CA证书 的信任列表，替换到容器内
-      - ./emby-ca-certificates.crt:/app/emby/etc/ssl/certs/ca-certificates.crt ##将添加了 伪造CA证书 的信任列表，替换到容器内（emby 的 c# 环境）
+      - ./certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro #自动生成的含伪造 CA 的信任列表
+      - ./certs/ca-certificates.crt:/app/emby/etc/ssl/certs/ca-certificates.crt:ro #emby 的 c# 环境
       - ./emby:/config #emby 的配置目录
+      - ./crypto.js:/app/emby/dashboard-ui/modules/polyfills/crypto.js:ro #前端破解脚本
       - ./data:/data   #按需配置媒体目录
     ports:
       - 8096:8096

@@ -1,0 +1,8 @@
+# 自动生成的证书目录（由 cert-gen 容器生成）
+certs/
+
+# emby 配置目录
+emby/
+
+# 媒体目录
+data/
