@@ -1,11 +1,14 @@
 # 思路
 
-**伪造一个 emby 授权响应网站，瞒骗 emby 服务端程序取得 Emby Premiere 资格**
+**偽造一個 emby 授權回應網站，瞞騙 emby 服務端程式取得 Emby Premiere 資格**
 
-具体原理分析查阅：https://imrbq.cn/exp/emby_hack.html
+具體原理分析查閱：https://imrbq.cn/exp/emby_hack.html
 
-本项目是按文章所述方法，使用 Docker Compose 编排整合
-以实现简单一键部署
+本專案是按文章所述方法，使用 Docker Compose 編排整合
+以實現簡單一鍵部署
+
+1. **自動證書生成**：集成 `cert-gen` 容器，首次運行時自動生成所需的自簽名 CA 和偽造證書。
+2. **零配置部署**：通過目錄掛載和初始化腳本，自動將證書注入到 Emby 容器，無需手動操作檔。
 
 <img src="https://github.com/fejich/docker-embyhack/raw/main/working.jpg">
 
@@ -14,76 +17,31 @@
 # 使用方法
 
 
-### 1）拉取本项目相关文件
+### 1）拉取本專案相關檔
 ```
 git clone https://github.com/fejich/docker-embyhack.git && cd docker-embyhack
 ```
 
 
-### 2）embyhack 目录内的 docker-compose.yml 文件是配置，按自己实际情况修改
-```
----
-version: "2.1"
-services:
-  nginx:
-    image: linuxserver/nginx
+### 2）(可選) 修改 docker-compose.yml
+`embyhack/docker-compose.yml` 已經通過自動化腳本進行了優化，通常無需修改。
 
-    # 两个容器间互联，实现免改 hosts/DNS
-    # 指定 emby 服务端访问本地伪造的 mb3admin.com 网站
-    container_name: mb3admin.com
+主要改動說明：
+- **Cert-Gen 服務**：新增了 `cert-gen` 服務，負責在啟動時檢查並生成證書。
+- **Nginx 服務**：掛載 `certs` 目錄，自動使用生成的證書。
+- **Emby 服務**：
+    - 掛載 `certs` 目錄到 `/mnt/certs`。
+    - 掛載 `emby-init` 腳本，在容器啟動時自動將 CA 證書安裝到系統信任區。
 
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Asia/Shanghai
-    volumes:
-      # nginx 的配置目录，已经部署好伪造证书与 emby 授权的响应
-      - ./nginx:/config
-    restart: unless-stopped
-# 单纯破解与该容器互联的 emby 服务端情况下，无需映射 https 的 443 端口出来
-#    ports:
-#      - 443:443
-
-  emby:
-    image: linuxserver/emby
-    depends_on:
-      - nginx
-    container_name: emby
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Asia/Shanghai
-    volumes:
-      # 在后台替换付费信息，防止浏览器直接请求远端付费认证服务
-      - ./crypto.js:/app/emby/dashboard-ui/modules/polyfills/crypto.js:ro
-
-      # 将添加了 伪造 CA 证书 的信任列表，替换到容器内
-      - ./ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
-
-      # 将添加了 伪造 CA 证书 的信任列表，替换到容器内（emby 的 c# 环境）
-      - ./emby-ca-certificates.crt:/app/emby/etc/ssl/certs/ca-certificates.crt:ro
-
-      # emby 的配置目录
-      - ./emby:/config
-
-      # 按需配置媒体目录
-      - ./data:/data
-
-    ports:
-      - 8096:8096
-    devices:
-      - /dev/dri:/dev/dri
-    restart: unless-stopped
-
-# 其他参数的具体含义，请查阅容器的官方文档
-# 使用到的 nginx 容器       https://hub.docker.com/r/linuxserver/nginx
-# 使用到的 emby 容器        https://hub.docker.com/r/linuxserver/emby
-
-```
-
-
-### 3）运行命令 docker-compose 命令一键部署
+### 3）運行命令 docker-compose 命令一鍵部署
 ```
 cd embyhack
-sudo docker-compose up -d
+docker-compose up -d
 ```
+首次啟動時：
+1. `cert-gen` 會生成證書到 `embyhack/certs` 目錄。
+2. `nginx` 啟動並載入證書。
+3. `emby` 啟動，執行初始化腳本安裝證書，然後正常運行。
+
+### 4) Windows 使用注意
+如果您在 Windows 上使用 Docker Desktop，請確保使用 WSL 2 後端，否則 `/dev/dri` (硬體解碼) 映射可能會導致錯誤。如果不使用硬體解碼，可在 `docker-compose.yml` 中註解掉 `devices` 區塊。
