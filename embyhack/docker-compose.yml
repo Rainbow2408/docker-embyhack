@@ -22,9 +22,9 @@ services:
     volumes:
       - ./nginx:/config #nginx 的配置目录，已经部署好伪造证书与 emby 授权的响应
       - ./certs:/config/keys:ro #自动生成的伪造证书與密鑰目錄
-#    ports:
-#      - 443:443
-#单纯破解与该容器互联的 emby 服务端情况下，无需映射 https 的 443 端口出来
+    # ports:
+    #   - 443:443
+    # 单纯破解与该容器互联的 emby 服务端情况下，无需映射 https 的 443 端口出来
     restart: unless-stopped
 
   emby:
@@ -43,7 +43,7 @@ services:
       - ./certs:/mnt/certs:ro # 掛載證書目錄供 init 腳本使用
       - ./emby-init:/custom-cont-init.d:ro # 注入初始化腳本以安裝證書
       - ./emby:/config #emby 的配置目录
-      - ./crypto.js:/app/emby/dashboard-ui/modules/polyfills/crypto.js:ro #前端破解脚本
+      - ./crypto.js:/app/emby/system/dashboard-ui/modules/polyfills/crypto.js:ro #前端破解脚本
       - ./data:/data   #按需配置媒体目录
     ports:
       - 8096:8096
