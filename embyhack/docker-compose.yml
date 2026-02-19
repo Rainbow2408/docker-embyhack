@@ -18,7 +18,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Asia/Shanghai
+      - TZ=Asia/Taipei
     volumes:
       - ./nginx:/config #nginx 的配置目錄，已經部署好偽造證書與 emby 授權的回應
       - ./certs:/config/keys:ro #自動生成的偽造證書與密鑰目錄
