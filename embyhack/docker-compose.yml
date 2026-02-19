@@ -6,12 +6,12 @@ services:
       dockerfile: Dockerfile.cert-gen
     container_name: cert-gen
     volumes:
-      - ./certs:/certs #自动生成的证书输出目录
+      - ./certs:/certs #自動生成的證書輸出目錄
     restart: "no"
 
   nginx:
     image: linuxserver/nginx
-    container_name: mb3admin.com #两个容器间互联，实现免改 hosts/DNS 指定 emby 服务端访问本地伪造的 mb3admin.com 网站
+    container_name: mb3admin.com #兩個容器間互聯，實現免改 hosts/DNS 指定 emby 服務端訪問本地偽造的 mb3admin.com 網站
     depends_on:
       cert-gen:
         condition: service_completed_successfully
@@ -20,11 +20,11 @@ services:
       - PGID=1000
       - TZ=Asia/Shanghai
     volumes:
-      - ./nginx:/config #nginx 的配置目录，已经部署好伪造证书与 emby 授权的响应
-      - ./certs:/config/keys:ro #自动生成的伪造证书與密鑰目錄
+      - ./nginx:/config #nginx 的配置目錄，已經部署好偽造證書與 emby 授權的回應
+      - ./certs:/config/keys:ro #自動生成的偽造證書與密鑰目錄
     # ports:
     #   - 443:443
-    # 单纯破解与该容器互联的 emby 服务端情况下，无需映射 https 的 443 端口出来
+    # 單純破解與該容器互聯的 emby 服務端情況下，無需映射 https 的 443 埠出來
     restart: unless-stopped
 
   emby:
@@ -38,19 +38,21 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Asia/Shanghai
+      - TZ=Asia/Taipei
     volumes:
       - ./certs:/mnt/certs:ro # 掛載證書目錄供 init 腳本使用
       - ./emby-init:/custom-cont-init.d:ro # 注入初始化腳本以安裝證書
-      - ./emby:/config #emby 的配置目录
-      - ./crypto.js:/app/emby/system/dashboard-ui/modules/polyfills/crypto.js:ro #前端破解脚本
-      - ./data:/data   #按需配置媒体目录
+      - ./emby:/config #emby 的配置目錄
+      - ./crypto.js:/app/emby/system/dashboard-ui/modules/polyfills/crypto.js:ro #前端破解腳本
+      - ./data:/data   #按需配置媒體目錄
+      - /path/to/movies:/data/movies # 電影媒體庫，請修改為您的實際路徑
+      - /path/to/tvshows:/data/tvshows # 電視劇媒體庫，請修改為您的實際路徑
     ports:
       - 8096:8096
     devices:
       - /dev/dri:/dev/dri
     restart: unless-stopped
 
-#其他参数的具体含义，请查阅容器的官方文档
+#其他參數的具體含義，請查閱容器的官方文檔
 #使用到的 nginx 容器       https://hub.docker.com/r/linuxserver/nginx
 #使用到的 emby 容器        https://hub.docker.com/r/linuxserver/emby
