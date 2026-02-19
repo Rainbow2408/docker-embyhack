@@ -19,7 +19,7 @@
 
 ### 1）拉取本專案相關檔
 ```
-git clone https://github.com/fejich/docker-embyhack.git && cd docker-embyhack
+git clone https://github.com/Rainbow2408/docker-embyhack.git && cd docker-embyhack
 ```
 
 
