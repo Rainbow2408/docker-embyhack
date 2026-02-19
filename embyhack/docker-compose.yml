@@ -21,8 +21,7 @@ services:
       - TZ=Asia/Shanghai
     volumes:
       - ./nginx:/config #nginx 的配置目录，已经部署好伪造证书与 emby 授权的响应
-      - ./certs/cert.crt:/config/keys/cert.crt:ro #自动生成的伪造证书
-      - ./certs/cert.key:/config/keys/cert.key:ro #自动生成的伪造密钥
+      - ./certs:/config/keys:ro #自动生成的伪造证书與密鑰目錄
 #    ports:
 #      - 443:443
 #单纯破解与该容器互联的 emby 服务端情况下，无需映射 https 的 443 端口出来
@@ -41,8 +40,8 @@ services:
       - PGID=1000
       - TZ=Asia/Shanghai
     volumes:
-      - ./certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro #自动生成的含伪造 CA 的信任列表
-      - ./certs/ca-certificates.crt:/app/emby/etc/ssl/certs/ca-certificates.crt:ro #emby 的 c# 环境
+      - ./certs:/mnt/certs:ro # 掛載證書目錄供 init 腳本使用
+      - ./emby-init:/custom-cont-init.d:ro # 注入初始化腳本以安裝證書
       - ./emby:/config #emby 的配置目录
       - ./crypto.js:/app/emby/dashboard-ui/modules/polyfills/crypto.js:ro #前端破解脚本
       - ./data:/data   #按需配置媒体目录
