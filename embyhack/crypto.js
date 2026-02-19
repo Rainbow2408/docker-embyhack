@@ -85,10 +85,10 @@ const noticeHTML = `
               <p>
                   <a href="https://emby.media/premiere.html" target="_blank" rel="noopener noreferrer">Buy Emby Premiere</a> to unlock great features and support development.
               </p>
+              <p style="font-size: 10px; color: #aaa; margin-top: 5px;">This message will show only once.</p>
           </div>
-          <button class="emby-notice-toggle-btn" title="Collapse/Expand">
-              <svg class="icon-expand" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-              <svg class="icon-collapse" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>
+          <button class="emby-notice-toggle-btn" title="Close">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
       </div>
   `;
@@ -112,10 +112,6 @@ const noticeCSS = `
           border: 1px solid #333;
           cursor: move;
       }
-      /* Use a CSS descendant selector instead of JS to show the notice */
-      /* html.withFullDrawer .emby-drawer-notice {
-          display: block;
-      } */
       .emby-drawer-notice.dragging {
           transition: none;
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -127,7 +123,6 @@ const noticeCSS = `
           justify-content: center;
           height: 100%;
           box-sizing: border-box;
-          transition: opacity 0.2s ease-in-out 0.15s;
       }
       .notice-title {
           font-size: 16px;
@@ -172,26 +167,15 @@ const noticeCSS = `
           width: 18px;
           height: 18px;
       }
-      .emby-notice-toggle-btn .icon-expand { display: none; }
-      .emby-notice-toggle-btn .icon-collapse { display: block; }
-
-      /* Collapsed State */
-      .emby-drawer-notice.collapsed {
-          width: 50px;
-          height: 50px;
-      }
-      .emby-drawer-notice.collapsed .notice-content {
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 0.1s ease-in-out; /* No delay on collapse */
-      }
-      .emby-drawer-notice.collapsed .emby-notice-toggle-btn .icon-expand { display: block; }
-      .emby-drawer-notice.collapsed .emby-notice-toggle-btn .icon-collapse { display: none; }
   `;
 
 // --- SCRIPT LOGIC ---
 
 function initializeNotice() {
+  if (document.cookie.indexOf('emby_hack_notice_closed=true') !== -1) {
+    return;
+  }
+
   if (document.querySelector('.emby-drawer-notice')) {
     return;
   }
@@ -217,13 +201,10 @@ function initializeNotice() {
   let startX, startY;
 
   toggleBtn.addEventListener('click', (e) => {
-    const travelX = Math.abs(e.clientX - startX);
-    const travelY = Math.abs(e.clientY - startY);
-    if (travelX > 5 || travelY > 5) {
-      return;
-    }
     e.stopPropagation();
-    notice.classList.toggle('collapsed');
+    e.preventDefault();
+    document.cookie = "emby_hack_notice_closed=true; max-age=31536000; path=/";
+    notice.remove();
   });
 
   let initialRight, initialTop;
